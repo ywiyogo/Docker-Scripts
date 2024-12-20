@@ -66,6 +66,10 @@ fi
 # GPU Support:
 # - includes NVIDIA GPU support if available
 # - configures NVIDIA environment variables
+#
+# AppImage support:
+# - add fuse device
+# - add SYS_ADMIN capability and security-opt
 
 docker run --rm -it \
     --security-opt=no-new-privileges \
@@ -94,6 +98,9 @@ docker run --rm -it \
     -e SSH_AUTH_SOCK="$SSH_AUTH_SOCK" \
     -e NVIDIA_VISIBLE_DEVICES=${NVIDIA_VISIBLE_DEVICES:-all} \
     -e NVIDIA_DRIVER_CAPABILITIES=${NVIDIA_DRIVER_CAPABILITIES:-all} \
+    --device /dev/fuse \
+    --cap-add SYS_ADMIN \
+    --security-opt apparmor:unconfined \
     -w "$WORK_DIR" \
     "$IMAGE_NAME" \
     /bin/bash
