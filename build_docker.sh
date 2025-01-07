@@ -3,9 +3,9 @@
 # build_docker.sh with additional options
 
 # Default values
-DEFAULT_IMAGE_NAME="ubuntu24_on_cachy"
+DEFAULT_IMAGE_NAME="ubuntu2404_on_arch"
 DEFAULT_IMAGE_TAG="latest"
-DEFAULT_DOCKERFILE="ubuntu_on_cachy.dockerfile"
+DEFAULT_DOCKERFILE="ubuntu2404_on_arch.dockerfile"
 
 
 # Function to print usage
@@ -54,11 +54,6 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Get current user details
-CURRENT_USER=$(whoami)
-CURRENT_UID=$(id -u)
-CURRENT_GID=$(id -g)
-
 # Verify required files exist
 if [ ! -f "$DOCKERFILE" ]; then
     echo "Error: Dockerfile not found at $DOCKERFILE"
@@ -71,16 +66,10 @@ echo "------------------------"
 echo "Dockerfile: $DOCKERFILE"
 echo "Image Name: $IMAGE_NAME"
 echo "Image Tag:  $IMAGE_TAG"
-echo "User:       $CURRENT_USER"
-echo "UID:        $CURRENT_UID"
-echo "GID:        $CURRENT_GID"
 echo "------------------------"
 
 # Build the image with build arguments
 docker build \
-    --build-arg USERNAME="$CURRENT_USER" \
-    --build-arg USER_UID="$CURRENT_UID" \
-    --build-arg USER_GID="$CURRENT_GID" \
     -t "$IMAGE_NAME:$IMAGE_TAG" \
     -f "$DOCKERFILE" \
     .

@@ -1,48 +1,77 @@
-# Docker entry point script
-
 #!/bin/bash
 
 set -e
 
+XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR:-/run/user/1000}
 
-# If running as root, setup permissions and switch to user
-if [ "$(id -u)" = "0" ]; then
-    # Setup runtime directory for the user
+# Logging function
+log() {
+    echo "[ENTRYPOINT] $*" >&2
+}
+
+# Error handling
+trap 'log "Error: Command failed with exit code $?"' ERR
+
+# Setup runtime directory
+setup_runtime_dir() {
     mkdir -p "$XDG_RUNTIME_DIR"
     chmod 0700 "$XDG_RUNTIME_DIR"
-    chown "$USERNAME" "$XDG_RUNTIME_DIR"
+    chown 1000:1000 "$XDG_RUNTIME_DIR"
+}
 
-    # Setup Wayland socket permissions if mounted
+# Setup display socket permissions
+setup_display_permissions() {
+    # Wayland
     if [ -n "$WAYLAND_DISPLAY" ] && [ -e "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY" ]; then
         chmod 0600 "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY"
-        chown "$USERNAME" "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY"
+        chown 1000:1000 "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY"
     fi
 
-    # Setup X11 permissions if needed
+    # X11
     if [ -e "/tmp/.X11-unix" ]; then
         chmod 1777 /tmp/.X11-unix
     fi
+}
 
-    # Setup PulseAudio/PipeWire socket permissions
+# Setup audio socket permissions
+setup_audio_permissions() {
     for socket in /tmp/pulse-* /tmp/pipewire-*; do
         if [ -e "$socket" ]; then
-            chown "$USERNAME" "$socket"
+            chown 1000:1000 "$socket"
         fi
     done
+}
 
-    # Setup GPU access
+# Setup GPU access
+setup_gpu_access() {
     if [ -d "/dev/dri" ]; then
+        log "Setting up GPU access"
         for device in /dev/dri/*; do
             if [ -e "$device" ]; then
                 group=$(stat -c '%g' "$device")
-                usermod -a -G "$group" "$USERNAME" 2>/dev/null || true
+                if [ -n "$group" ]; then
+                    usermod -a -G "$group" 1000 2>/dev/null || log "Could not add user to GPU group"
+                fi
             fi
         done
+    else
+        log "No DRI devices found"
     fi
+}
 
-    # Switch to the user using gosu
-    exec gosu "$USERNAME" "$@"
+# Main entry point logic
+if [ "$(id -u)" = "0" ]; then
+    log "Running as root, setting up environment"
+    
+    setup_runtime_dir
+    setup_display_permissions
+    setup_audio_permissions
+    setup_gpu_access
+
+    # Switch to user 1000
+    log "Switching to user 1000"
+    exec su -c "$*" 1000
 else
-    # Already running as user, just execute the command
+    log "Already running as non-root user"
     exec "$@"
 fi

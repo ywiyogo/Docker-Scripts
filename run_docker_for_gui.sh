@@ -1,5 +1,7 @@
 # Bash script for running any Ubuntu-based Docker image on Arch Wayland host computer.
 # Example for running ROS2 Rviz2 or Gazebo simulator: ./run_docker_for_gui.sh osrf/ros:jazzy-desktop-full
+# Author: Yongkie Wiyogo
+
 #!/bin/bash
 
 if [ $# -ne 0 ]; then
@@ -38,7 +40,23 @@ fi
 
 # Check if nvidia-smi exists and add GPU support if available
 if command -v nvidia-smi &>/dev/null; then
-    GPU_ARGS="--gpus all"
+    # Check if /etc/docker/daemon.json exists
+    if [ ! -f "/etc/docker/daemon.json" ]; then
+        echo "Error: NVIDIA GPU support requires /etc/docker/daemon.json configuration"
+        echo "Please create /etc/docker/daemon.json with the following content:"
+        echo '{ "runtimes": { "nvidia": { "path": "nvidia-container-runtime", "runtimeArgs": [] } } }'
+        exit 1
+    fi
+
+    # Additional check to verify the content of daemon.json
+    if ! grep -q '"nvidia"' "/etc/docker/daemon.json"; then
+        echo "Error: /etc/docker/daemon.json is missing NVIDIA runtime configuration"
+        echo "Recommended configuration:"
+        echo '{ "runtimes": { "nvidia": { "path": "nvidia-container-runtime", "runtimeArgs": [] } } }'
+        exit 1
+    fi
+
+    GPU_ARGS="--gpus all --runtime nvidia"
     echo "NVIDIA GPU support enabled"
 else
     GPU_ARGS=""
@@ -100,11 +118,15 @@ docker run --rm -it \
     -e USERNAME="$USER" \
     -e SSH_AUTH_SOCK="$SSH_AUTH_SOCK" \
     -e DISPLAY=$DISPLAY \
+    -e QT_X11_NO_MITSHM=1 \
     -e QT_QPA_PLATFORM=xcb \
+    -e "WAYLAND_DISPLAY=$WAYLAND_DISPLAY" \
+    -e "XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR" \
     -e NVIDIA_VISIBLE_DEVICES=${NVIDIA_VISIBLE_DEVICES:-all} \
     -e NVIDIA_DRIVER_CAPABILITIES=${NVIDIA_DRIVER_CAPABILITIES:-all} \
     -v /tmp/.X11-unix:/tmp/.X11-unix \
-    -v /run/user/$(id -u)/wayland-0:/tmp/wayland-0 \
+    -v "$XDG_RUNTIME_DIR:$XDG_RUNTIME_DIR" \
+    -v "/dev/dri:/dev/dri" \
     -w "$WORK_DIR" \
     "$IMAGE_NAME" \
     /bin/bash

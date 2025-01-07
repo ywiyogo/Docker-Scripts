@@ -12,26 +12,31 @@ RUN apt-get update && apt-get install -y \
     software-properties-common \
     && add-apt-repository universe \
     && curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg \
-    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | tee /etc/apt/sources.list.d/ros2.list > /dev/null
 
 # Install ROS2 packages and Gazebo simulator
 RUN apt-get update && apt-get install -y \
     ros-${ROS_DISTRO}-desktop \
     ros-${ROS_DISTRO}-ros-base \
-    ros-dev-tools \
     ros-${ROS_DISTRO}-ros-gz \
+    ros-dev-tools \
     python3-colcon-common-extensions \
+    python3-colcon-mixin \
     python3-rosdep \
+    python3-vcstool \
     && rm -rf /var/lib/apt/lists/*
 
-# Initialize rosdep
-RUN rosdep init && rosdep update
+RUN rosdep init && \
+  rosdep update --rosdistro $ROS_DISTRO
+
+# Add entrypoint for sourcing the ROS2 setup.bash
+COPY ./ros2_entrypoint.sh /
+RUN chmod +x /ros2_entrypoint.sh
+ENV ROS_DISTRO=${ROS_DISTRO}
+ENTRYPOINT ["/ros2_entrypoint.sh"]
 
 # Switch back to the default user if needed
 USER $USERNAME
-
-# Source ROS2 in bashrc
-RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> /home/$USERNAME/.bashrc 
 
 # Set up ROS2 workspace
 RUN mkdir -p ~/ros2_ws/src

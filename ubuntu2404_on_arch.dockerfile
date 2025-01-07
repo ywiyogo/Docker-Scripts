@@ -3,29 +3,8 @@
 
 FROM ubuntu:24.04
 
-# Accept build arguments for user creation
-ARG USERNAME
-ARG USER_UID
-ARG USER_GID
-
 # Prevent interactive prompts during installation
 ENV DEBIAN_FRONTEND=noninteractive
-
-# In Ubuntu-based Docker images, there's typically a default system user/group
-# created during the base image build with GID 1000.
-# Removes the default 'ubuntu' user if it exists
-RUN userdel -r ubuntu 2>/dev/null || true \
-    && groupadd --gid $USER_GID $USERNAME \
-    && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
-    && apt-get update \
-    && apt-get install -y sudo \
-    && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
-    && chmod 0440 /etc/sudoers.d/$USERNAME
-
-RUN apt-get update && apt-get install -y \
-    gosu \
-    && rm -rf /var/lib/apt/lists/* \
-    && chmod +s /usr/sbin/gosu
 
 # Basic system utilities and common dependencies
 RUN apt-get update && apt-get install -y \
