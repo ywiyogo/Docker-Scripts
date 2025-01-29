@@ -34,3 +34,10 @@ In order to fix this, `/etc/docker/daemon.json`should be created and contains:
 
 then restart docker `sudo systemctl restart docker` and add `--runtime nvidia` in the `docker run` argument.
 
+## Allowing UDP Multicast for multi robot communication
+
+If the ufw firewall is enabled, the ROS node and topic won't be detected. In order to see the UDP multicast, allow the UDP multicast in localhost. If our local network is has this IP 192.168.8.X, we can allow it using this:
+
+```
+sudo ufw allow in proto udp from 192.168.8.0/24 to any
+```

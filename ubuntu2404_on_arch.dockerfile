@@ -34,6 +34,11 @@ RUN apt-get update && apt-get install -y \
     meson \
     strace \
     ltrace \
+    # Networking
+    iputils-ping \
+    net-tools \
+    iproute2 \
+    dnsutils \
     # Terminal utilities
     ncurses-term \
     bash-completion \

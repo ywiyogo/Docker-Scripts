@@ -126,7 +126,6 @@ docker run --rm -it \
     -e NVIDIA_DRIVER_CAPABILITIES=${NVIDIA_DRIVER_CAPABILITIES:-all} \
     -v /tmp/.X11-unix:/tmp/.X11-unix \
     -v "$XDG_RUNTIME_DIR:$XDG_RUNTIME_DIR" \
-    -v "/dev/dri:/dev/dri" \
     -w "$WORK_DIR" \
     "$IMAGE_NAME" \
     /bin/bash

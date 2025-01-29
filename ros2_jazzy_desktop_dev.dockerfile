@@ -12,13 +12,20 @@ RUN apt-get update && apt-get install -y \
     software-properties-common \
     && add-apt-repository universe \
     && curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg \
-    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | tee /etc/apt/sources.list.d/ros2.list > /dev/null
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | tee /etc/apt/sources.list.d/ros2.list > /dev/null \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install ROS2 packages and Gazebo simulator
 RUN apt-get update && apt-get install -y \
     ros-${ROS_DISTRO}-desktop \
     ros-${ROS_DISTRO}-ros-base \
     ros-${ROS_DISTRO}-ros-gz \
+    ros-${ROS_DISTRO}-navigation2 \
+    ros-${ROS_DISTRO}-nav2-bringup \
+    ros-${ROS_DISTRO}-nav2-minimal-tb* \
+    ros-${ROS_DISTRO}-turtlebot4-simulator \
+    ros-${ROS_DISTRO}-irobot-create-nodes \
+    ros-${ROS_DISTRO}-rmw-cyclonedds-cpp \
     ros-dev-tools \
     python3-colcon-common-extensions \
     python3-colcon-mixin \
